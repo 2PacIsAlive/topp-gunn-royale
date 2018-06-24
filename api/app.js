@@ -4,6 +4,7 @@ var io = require('socket.io')(http);
 var players = {};
 
 io.on('connection', function (socket){
+  console.log(`${socket.id} connected`)
   socket.on('push', function (data) {
     players[socket.id] = data;
     socket.emit('feed', {
