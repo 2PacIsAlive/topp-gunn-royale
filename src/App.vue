@@ -133,8 +133,9 @@
     prev.distance < curr.distance ? prev : curr
   );
   const angleDeg = Math.atan2(nearestAsteroid.y - ship.y, nearestAsteroid.x - ship.x) * 180 / Math.PI;
-  rotate(angleDeg + 180)
-  engageThrusters()`,
+  rotate(angleDeg)
+  engageThrusters()
+  if (nearestAsteroid.distance < 10000) fireMissile()`,
         sketch: null,
         bullets: null,
         harmlessBullets: null,
@@ -177,7 +178,7 @@
           bullet.addImage(this.bulletImage);
           bullet.setSpeed(data.speed, data.r);
           bullet.rotation = data.r
-          bullet.life = 30;
+          bullet.life = 10;
           this.harmlessBullets.add(bullet);
         }
       },
@@ -255,16 +256,17 @@
         this.enemyShips.add(enemyShip)
         return enemyShip;
       },
-      createAsteroid: function (type, x, y) {
+      createAsteroid: function (size, x, y) {
+        let type = this.sketch.floor(this.sketch.random(3))
         var a = this.sketch.createSprite(x, y);
         var img  = this.sketch.loadImage("/public/asteroid"+type+"_small.png");
         // var img  = this.sketch.loadImage("/public/asteroid.jpg");
         a.addImage(img);
-        a.setSpeed(5+(type/5), this.sketch.random(360));
-        a.type = type;
-        if(type == 2)
+        a.setSpeed(5+(size/5), this.sketch.random(360));
+        a.type = size; // ahhhhhhh
+        if(size == 2)
             a.scale = 2;
-        else if(type == 1)
+        else if(size == 1)
             a.scale = 1.5;
         else
           a.scale=1
@@ -309,7 +311,7 @@
       }
     },
     created: function () {
-      this.timeStart = new Date().getTime() / 1000;
+      this.timeStart = new Date().getTime();
       var s = function (sketch) {
         this.sketch = sketch;
 
@@ -366,7 +368,12 @@
               that.ship.changeAnimation("normal")
             },
             fireMissile: function () {
-
+              var bullet = sketch.createSprite(that.ship.position.x, that.ship.position.y);
+              bullet.addImage(that.bulletImage);
+              bullet.setSpeed(15, that.ship.rotation);
+              bullet.rotation = that.ship.rotation
+              bullet.life = 10;
+              that.bullets.add(bullet);
             },
             rotate: function (degrees) {
               that.ship.rotation = degrees
@@ -396,14 +403,15 @@
             sketch.textSize(20);
             sketch.text(`you survived ${this.matchTime}s`, this.sketch.width/2, this.sketch.height/2 + 30);
           } else {
-            sketch.textAlign(sketch.CENTER);
-            sketch.textSize(26);
-            sketch.textFont('Inconsolata');
+            sketch.textAlign(sketch.LEFT);
+            sketch.textSize(42);
+            sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
             //sketch.text(`fighters ${this.showCode} remaining: ${this.numEnemies}`, this.sketch.width / 5, this.sketch.height - 40);
             if (!this.gameOver) {
-              this.matchTime = this.sketch.floor(new Date().getTime() / 1000 - this.timeStart)
+              this.matchTime = this.sketch.floor(new Date().getTime() - this.timeStart)
             }
-            //sketch.text(`match time: ${this.matchTime}s`, this.sketch.width - this.sketch.width / 5, this.sketch.height - 40);
+            sketch.fill('white')
+            sketch.text(`${this.matchTime / 1000}s`, 20, 50);
 
             for (var i = 0; i < sketch.allSprites.length; i++) {
               var s = sketch.allSprites[i];
