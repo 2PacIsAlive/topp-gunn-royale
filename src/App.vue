@@ -10,6 +10,94 @@
 </template>
 
 <script>
+  (function () {
+  var vm = {};
+  var contextifiedSandboxes = [];
+
+  function createIFrame() {
+    var iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    return iframe;
+  }
+
+  function createIFrameWithContext(sandbox) {
+    var iframe = createIFrame();
+    var key;
+    document.body.appendChild(iframe);
+    if (sandbox) {
+      for (key in sandbox) {
+        if (sandbox.hasOwnProperty(key)) {
+          iframe.contentWindow[key] = sandbox[key];
+        }
+      }
+      contextifiedSandboxes.push(sandbox);
+    }
+    return iframe;
+  }
+
+  function runCodeInNewContext(code, sandbox) {
+    var iframe = createIFrameWithContext(sandbox);
+    var result = iframe.contentWindow.eval(code);
+    document.body.removeChild(iframe);
+    return result;
+  }
+
+  function runCodeInContext(code, context) {
+    if (!context) {
+      throw new Error('Context cannot be undefined');
+    }
+    return context.eval(code);
+  }
+
+  function Script(code) {
+    this.code = code;
+  }
+
+  Script.prototype.runInContext = function (context) {
+    return runCodeInContext(this.code, context);
+  };
+
+  Script.prototype.runInNewContext = function (sandbox) {
+    return runCodeInNewContext(this.code, sandbox);
+  };
+
+  Script.prototype.runInThisContext = function () {
+    return runCodeInContext(this.code, window);
+  };
+
+  vm.Script = Script;
+
+  vm.createContext = function (sandbox) {
+    return createIFrameWithContext(sandbox).contentWindow;
+  };
+
+  vm.isContext = function (sandbox) {
+    return contextifiedSandboxes.indexOf(sandbox) !== -1;
+  };
+
+  vm.runInContext = function (code, context) {
+    return runCodeInContext(code, context);
+  };
+
+  vm.runInDebugContext = function () {
+    throw new Error('vm.runInDebugContext(code) does not work in browsers');
+  };
+
+  vm.runInNewContext = function (code, sandbox) {
+    return runCodeInNewContext(code, sandbox);
+  };
+
+  vm.runInThisContext = function (code) {
+    return runCodeInContext(code, window);
+  };
+  
+  vm.createScript = function (code) {
+    return new vm.Script(code);
+  };
+
+  window.vm = vm;
+}());
+
   import { PrismEditor } from 'vue-prism-editor';
   import 'vue-prism-editor/dist/prismeditor.min.css'; // import the styles somewhere
 
@@ -20,6 +108,8 @@
   import 'prismjs/themes/prism-tomorrow.css'; // import syntax highlighting styles
 
   import { mapState, mapActions } from 'vuex'
+  // import {NodeVM} from 'vm2'
+
   export default {
     components: {
       PrismEditor,
@@ -29,18 +119,26 @@
         width: 0,
         height: 0,
         showCode: true,
-        code: `{
-  init: function () {
-    console.log("hi")
-  }
-  update: function () {
-
-  }
-}`,
+        code: `const nearestAsteroid = radar()
+  .map(asteroid => {
+    let diffX = ship.x - asteroid.x
+    let diffY = ship.y - asteroid.y
+    return {
+      distance: diffX*diffX+diffY*diffY,
+      x: asteroid.x,
+      y: asteroid.y
+    }
+  })
+  .reduce((prev, curr) => 
+    prev.distance < curr.distance ? prev : curr
+  );
+  const angleDeg = Math.atan2(nearestAsteroid.y - ship.y, nearestAsteroid.x - ship.x) * 180 / Math.PI;
+  rotate(angleDeg + 180)
+  engageThrusters()`,
         sketch: null,
         bullets: null,
         harmlessBullets: null,
-        clouds: null,
+        asteroids: null,
         ship: null,
         enemyShips: null,
         enemyShipImage: null,
@@ -53,12 +151,14 @@
         skyImage: null,
         timeStart: null,
         killed: [],
-        numClouds: 10,
+        numAsteroids: 25,
         numEnemies: 0,
         matchTime: 0,
-        MARGIN: 40,
+        MARGIN: 20,
         gameOver: false,
-        victory: false
+        victory: false,
+        //vm: new NodeVM(),
+        context: null
       }
     },
     sockets: {
@@ -157,25 +257,25 @@
       },
       createAsteroid: function (type, x, y) {
         var a = this.sketch.createSprite(x, y);
-        var img  = this.sketch.loadImage("/public/asteroid"+type+".png");
+        var img  = this.sketch.loadImage("/public/asteroid"+type+"_small.png");
         // var img  = this.sketch.loadImage("/public/asteroid.jpg");
         a.addImage(img);
-        a.setSpeed(-1+(type/5), this.sketch.random(360));
+        a.setSpeed(5+(type/5), this.sketch.random(360));
         a.type = type;
         if(type == 2)
-            a.scale = 1;
+            a.scale = 2;
         else if(type == 1)
             a.scale = 1.5;
         else
-          a.scale=2
+          a.scale=1
 
         a.mass = 2+a.scale;
-        this.clouds.add(a);
+        this.asteroids.add(a);
         return a;
       },
-      enemyShipHit: function(enemyShip, bullet) {
+      asteroidHit: function(asteroid, bullet) {
         for(var i=0; i<10; i++) {
-          var p = this.sketch.createSprite(enemyShip.position.x, enemyShip.position.y);
+          var p = this.sketch.createSprite(asteroid.position.x, asteroid.position.y);
           p.addImage(this.explosionImage);
           p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
           p.friction = 0.55;
@@ -183,18 +283,29 @@
         }
 
         bullet.remove();
-        this.hit(enemyShip.id, enemyShip.position.x, enemyShip.position.y)
-        enemyShip.armor -= 1;
-        if (enemyShip.armor === 0) {
-          enemyShip.remove();
-          console.log(`${enemyShip.id} killed`)
-          this.enemyPlayers[enemyShip.id].remove()
-          delete this.enemyShipLocations[enemyShip.id]
-          delete this.enemyPlayers[enemyShip.id]
-          this.numEnemies -= 1;
-          this.kill(enemyShip.id)
-          this.killed.push(enemyShip.id)
+        // this.hit(enemyShip.id, enemyShip.position.x, enemyShip.position.y)
+        //enemyShip.armor -= 1;
+
+        // maybe break up asteroids into smaller asteroids here
+        console.log(asteroid.type)
+        if (asteroid.type == 2) {
+          this.createAsteroid(1, asteroid.position.x, asteroid.position.y)
+          this.createAsteroid(1, asteroid.position.x, asteroid.position.y)
+        } else if (asteroid.type == 1){
+          this.createAsteroid(0, asteroid.position.x, asteroid.position.y)
         }
+        asteroid.remove()
+
+        // if (enemyShip.armor === 0) {
+        //   enemyShip.remove();
+        //   console.log(`${enemyShip.id} killed`)
+        //   this.enemyPlayers[enemyShip.id].remove()
+        //   delete this.enemyShipLocations[enemyShip.id]
+        //   delete this.enemyPlayers[enemyShip.id]
+        //   this.numEnemies -= 1;
+        //   this.kill(enemyShip.id)
+        //   this.killed.push(enemyShip.id)
+        // }
       }
     },
     created: function () {
@@ -218,12 +329,12 @@
           this.explosionImage = sketch.loadImage("/public/explosion.png");
           this.skyImage = sketch.loadImage("/public/sky.png");
 
-          this.clouds = new sketch.Group();
+          this.asteroids = new sketch.Group();
           this.bullets = new sketch.Group();
           this.harmlessBullets = new sketch.Group();
           this.enemyShips = new sketch.Group();
 
-          for(var i = 0; i<this.numClouds; i++) {
+          for(var i = 0; i<this.numAsteroids; i++) {
               var ang = sketch.random(360);
               var px = sketch.random(this.width);
               // var py = this.height/2+ 1000 * sketch.sin(sketch.radians(ang));
@@ -241,6 +352,39 @@
         }.bind(this);
 
         sketch.draw = function () {
+          let that = this
+          var sandbox = { 
+            ship: {
+              x: that.ship.position.x,
+              y: that.ship.position.y
+            },
+            engageThrusters: function () {
+              that.ship.setSpeed(5, that.ship.rotation)
+              that.ship.changeAnimation("thrust");
+            },
+            disengageThrusters: function () {
+              that.ship.changeAnimation("normal")
+            },
+            fireMissile: function () {
+
+            },
+            rotate: function (degrees) {
+              that.ship.rotation = degrees
+            },
+            radar: function () {
+              return that.asteroids.map(asteroid => {
+                return {
+                  size: asteroid.type + 1,
+                  x: asteroid.position.x,
+                  y: asteroid.position.y
+                }
+              })
+            }
+
+          };
+          this.context = vm.createContext(sandbox)
+          vm.runInContext(this.code, this.context);
+
           sketch.background(45,45,45);
           sketch.fill(0);
 
@@ -255,11 +399,11 @@
             sketch.textAlign(sketch.CENTER);
             sketch.textSize(26);
             sketch.textFont('Inconsolata');
-            sketch.text(`fighters ${this.showCode} remaining: ${this.numEnemies}`, this.sketch.width / 5, this.sketch.height - 40);
+            //sketch.text(`fighters ${this.showCode} remaining: ${this.numEnemies}`, this.sketch.width / 5, this.sketch.height - 40);
             if (!this.gameOver) {
               this.matchTime = this.sketch.floor(new Date().getTime() / 1000 - this.timeStart)
             }
-            sketch.text(`match time: ${this.matchTime}s`, this.sketch.width - this.sketch.width / 5, this.sketch.height - 40);
+            //sketch.text(`match time: ${this.matchTime}s`, this.sketch.width - this.sketch.width / 5, this.sketch.height - 40);
 
             for (var i = 0; i < sketch.allSprites.length; i++) {
               var s = sketch.allSprites[i];
@@ -269,10 +413,10 @@
               if (s.position.y > sketch.height + this.MARGIN) s.position.y = -this.MARGIN;
             }
 
-            this.enemyShips.overlap(this.bullets, this.enemyShipHit);
+            this.asteroids.overlap(this.bullets, this.asteroidHit);
 
             this.ship.bounce(this.enemyShips);
-            this.clouds.bounce(this.clouds)
+            this.asteroids.bounce(this.asteroids)
 
             if (sketch.keyDown(sketch.LEFT_ARROW))
               this.ship.rotation -= 4;
@@ -282,8 +426,8 @@
               this.ship.addSpeed(.5, this.ship.rotation);
               this.ship.changeAnimation("thrust");
             }
-            else
-              this.ship.changeAnimation("normal");
+            // else
+            //   this.ship.changeAnimation("normal");
 
             if (sketch.keyWentDown("SPACE")) {
               this.fire(this.playerId, this.ship.position.x, this.ship.position.y, this.ship.rotation, 10 + this.ship.getSpeed())
@@ -313,7 +457,7 @@
           }
         }.bind(this);
       }.bind(this);
-      new p5(s, 'p5sketch');
+      new p5(s, 'p5-section');
     }
   }
 </script>
