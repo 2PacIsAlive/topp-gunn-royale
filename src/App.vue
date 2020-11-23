@@ -1,16 +1,42 @@
 <template>
-  <div>
-    <div id="p5">
-
+  <div id="outer">
+    <div id="p5-section">
+      
+    </div>
+    <div id="code-section">
+      <prism-editor class="my-editor" v-model="code" :highlight="highlighter" line-numbers></prism-editor>
     </div>
   </div>
 </template>
 
 <script>
+  import { PrismEditor } from 'vue-prism-editor';
+  import 'vue-prism-editor/dist/prismeditor.min.css'; // import the styles somewhere
+
+  // import highlighting library (you can use any library you want just return html string)
+  import { highlight, languages } from 'prismjs/components/prism-core';
+  import 'prismjs/components/prism-clike';
+  import 'prismjs/components/prism-javascript';
+  import 'prismjs/themes/prism-tomorrow.css'; // import syntax highlighting styles
+
   import { mapState, mapActions } from 'vuex'
   export default {
+    components: {
+      PrismEditor,
+    },
     data () {
       return {
+        width: 0,
+        height: 0,
+        showCode: true,
+        code: `{
+  init: function () {
+    console.log("hi")
+  }
+  update: function () {
+
+  }
+}`,
         sketch: null,
         bullets: null,
         harmlessBullets: null,
@@ -27,7 +53,7 @@
         skyImage: null,
         timeStart: null,
         killed: [],
-        numClouds: 100,
+        numClouds: 10,
         numEnemies: 0,
         matchTime: 0,
         MARGIN: 40,
@@ -83,6 +109,9 @@
       }
     },
     methods: {
+      highlighter(code) {
+        return highlight(code, languages.js); // languages.<insert language> to return html with markup
+      },
       push: function () {
           this.$socket.emit('push', {
             x: this.ship.position.x,
@@ -126,16 +155,19 @@
         this.enemyShips.add(enemyShip)
         return enemyShip;
       },
-      createCloud: function (type, x, y) {
+      createAsteroid: function (type, x, y) {
         var a = this.sketch.createSprite(x, y);
-        var img  = this.sketch.loadImage("/public/cloud_"+this.sketch.floor(type)+".png");
+        var img  = this.sketch.loadImage("/public/asteroid"+type+".png");
+        // var img  = this.sketch.loadImage("/public/asteroid.jpg");
         a.addImage(img);
-        a.setSpeed(-1+(type/5), 0);
+        a.setSpeed(-1+(type/5), this.sketch.random(360));
         a.type = type;
         if(type == 2)
-            a.scale = .6;
-        if(type == 1)
-            a.scale = .3;
+            a.scale = 1;
+        else if(type == 1)
+            a.scale = 1.5;
+        else
+          a.scale=2
 
         a.mass = 2+a.scale;
         this.clouds.add(a);
@@ -170,8 +202,15 @@
       var s = function (sketch) {
         this.sketch = sketch;
 
+        function showCodeScreen() {
+          this.showCode = true
+        }
         sketch.setup = function () {
-          sketch.createCanvas(window.innerWidth, window.innerHeight);
+          let container = document.getElementById("p5-section")
+          this.width = container.offsetWidth
+          this.height = container.offsetHeight
+
+          sketch.createCanvas(this.width, this.height);
 
           this.bulletImage = sketch.loadImage("/public/missile.png");
           this.enemyShipImage = sketch.loadImage("/public/jet.png");
@@ -186,12 +225,13 @@
 
           for(var i = 0; i<this.numClouds; i++) {
               var ang = sketch.random(360);
-              var px = sketch.random(sketch.width);
-              var py = sketch.height/2+ 1000 * sketch.sin(sketch.radians(ang));
-              this.createCloud(sketch.random(0,3), px, py);
+              var px = sketch.random(this.width);
+              // var py = this.height/2+ 1000 * sketch.sin(sketch.radians(ang));
+              var py = sketch.random(this.height)
+              this.createAsteroid(sketch.floor(sketch.random(3)), px, py);
           }
 
-          this.ship = sketch.createSprite(sketch.width/2, sketch.height/2);
+          this.ship = sketch.createSprite(this.width/2, this.height/2);
           this.ship.maxSpeed = 6;
           this.ship.friction = 0.05;
           this.ship.setCollider("circle", 0,0, 20);
@@ -201,7 +241,7 @@
         }.bind(this);
 
         sketch.draw = function () {
-          sketch.background(33, 148, 195);
+          sketch.background(45,45,45);
           sketch.fill(0);
 
           if (this.gameOver) {
@@ -215,7 +255,7 @@
             sketch.textAlign(sketch.CENTER);
             sketch.textSize(26);
             sketch.textFont('Inconsolata');
-            sketch.text(`fighters remaining: ${this.numEnemies}`, this.sketch.width / 5, this.sketch.height - 40);
+            sketch.text(`fighters ${this.showCode} remaining: ${this.numEnemies}`, this.sketch.width / 5, this.sketch.height - 40);
             if (!this.gameOver) {
               this.matchTime = this.sketch.floor(new Date().getTime() / 1000 - this.timeStart)
             }
@@ -232,6 +272,7 @@
             this.enemyShips.overlap(this.bullets, this.enemyShipHit);
 
             this.ship.bounce(this.enemyShips);
+            this.clouds.bounce(this.clouds)
 
             if (sketch.keyDown(sketch.LEFT_ARROW))
               this.ship.rotation -= 4;
@@ -276,3 +317,31 @@
     }
   }
 </script>
+
+<style scoped>
+  #outer {
+    height: 100vh;
+  }
+  #p5-section {
+    height: 75vh;
+  }
+  #code-section {
+    height: 25vh;
+  }
+  .my-editor {
+    /* we dont use `language-` classes anymore so thats why we need to add background and text color manually */
+    background: #2d2d2d;
+    color: #ccc;
+
+    /* you must provide font-family font-size line-height. Example: */
+    font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 5px;
+  }
+
+  /* optional class for removing the outline */
+  /* .prism-editor__textarea:focus {
+    outline: none;
+  } */
+</style>
