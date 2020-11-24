@@ -116,6 +116,8 @@
     },
     data () {
       return {
+        highscore: 0,
+        error: null,
         width: 0,
         height: 0,
         showCode: true,
@@ -288,8 +290,6 @@
         // this.hit(enemyShip.id, enemyShip.position.x, enemyShip.position.y)
         //enemyShip.armor -= 1;
 
-        // maybe break up asteroids into smaller asteroids here
-        console.log(asteroid.type)
         if (asteroid.type == 2) {
           this.createAsteroid(1, asteroid.position.x, asteroid.position.y)
           this.createAsteroid(1, asteroid.position.x, asteroid.position.y)
@@ -390,18 +390,34 @@
 
           };
           this.context = vm.createContext(sandbox)
-          vm.runInContext(this.code, this.context);
-
+          try {
+            vm.runInContext(this.code, this.context);
+            this.gameOver = false
+            if (this.timeStart === null) 
+              this.timeStart = new Date().getTime()
+          } catch (err) {
+            this.lastGameScore = this.matchTime
+            if (this.lastGameScore > this.highscore) this.highscore = this.lastGameScore
+            this.error = err
+            this.gameOver = true
+            this.timeStart = null
+          }
           sketch.background(45,45,45);
           sketch.fill(0);
 
           if (this.gameOver) {
             sketch.textAlign(sketch.CENTER);
             sketch.textSize(26);
-            sketch.textFont('Inconsolata');
+            sketch.fill(255,255,255)
+            sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
             sketch.text('game over', this.sketch.width/2, this.sketch.height/2);
             sketch.textSize(20);
-            sketch.text(`you survived ${this.matchTime}s`, this.sketch.width/2, this.sketch.height/2 + 30);
+            sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
+            sketch.text(`survived: ${this.lastGameScore/1000}s`, this.sketch.width/2, this.sketch.height/2 + 30);
+            sketch.text(`highscore: ${this.highscore/1000}s`, this.sketch.width/2, this.sketch.height/2 + 50);
+            sketch.fill(255, 0, 0)
+            sketch.textSize(36);
+            sketch.text(`error: ${this.error}`, this.sketch.width/2, this.sketch.height/2 + 100);
           } else {
             sketch.textAlign(sketch.LEFT);
             sketch.textSize(42);
