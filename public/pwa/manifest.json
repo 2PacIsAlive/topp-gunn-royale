@@ -1,4 +1,10 @@
 {
+  "name": "topp gunn royale",
+  "short_name": "toppgunnroyale",
+  "start_url": "index.html",
+  "display": "standalone",
+  "theme_color": "#2d2d2d",
+  "background_color": "#ccc",
   "icons": [
     {
       "src": "./img/icons/android-chrome-192x192.png",
