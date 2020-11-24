@@ -451,39 +451,20 @@
             this.ship.bounce(this.enemyShips);
             this.asteroids.bounce(this.asteroids)
 
-            if (sketch.keyDown(sketch.LEFT_ARROW))
-              this.ship.rotation -= 4;
-            if (sketch.keyDown(sketch.RIGHT_ARROW))
-              this.ship.rotation += 4;
-            if (sketch.keyDown(sketch.UP_ARROW)) {
-              this.ship.addSpeed(.5, this.ship.rotation);
-              this.ship.changeAnimation("thrust");
-            }
-            // else
-            //   this.ship.changeAnimation("normal");
+        
 
-            if (sketch.keyWentDown("SPACE")) {
-              this.fire(this.playerId, this.ship.position.x, this.ship.position.y, this.ship.rotation, 10 + this.ship.getSpeed())
-              var bullet = sketch.createSprite(this.ship.position.x, this.ship.position.y);
-              bullet.addImage(this.bulletImage);
-              bullet.setSpeed(10 + this.ship.getSpeed(), this.ship.rotation);
-              bullet.rotation = this.ship.rotation
-              bullet.life = 30;
-              this.bullets.add(bullet);
-            }
-
-            for (var id in this.enemyShipLocations) {
-              if (this.killed.indexOf(id) === -1) {
-                if (id in this.enemyPlayers) {
-                  this.enemyPlayers[id].position.x = this.enemyShipLocations[id].x
-                  this.enemyPlayers[id].position.y = this.enemyShipLocations[id].y
-                  this.enemyPlayers[id].rotation = this.enemyShipLocations[id].r
-                } else {
-                  let enemyPlayer = this.createEnemyPlayer(id, this.enemyShipLocations[id].x, this.enemyShipLocations[id].y, this.enemyShipLocations[id].r);
-                  this.enemyPlayers[id] = enemyPlayer;
-                }
-              }
-            }
+            // for (var id in this.enemyShipLocations) {
+            //   if (this.killed.indexOf(id) === -1) {
+            //     if (id in this.enemyPlayers) {
+            //       this.enemyPlayers[id].position.x = this.enemyShipLocations[id].x
+            //       this.enemyPlayers[id].position.y = this.enemyShipLocations[id].y
+            //       this.enemyPlayers[id].rotation = this.enemyShipLocations[id].r
+            //     } else {
+            //       let enemyPlayer = this.createEnemyPlayer(id, this.enemyShipLocations[id].x, this.enemyShipLocations[id].y, this.enemyShipLocations[id].r);
+            //       this.enemyPlayers[id] = enemyPlayer;
+            //     }
+            //   }
+            // }
 
             //this.push();
             sketch.drawSprites()
