@@ -142,6 +142,7 @@
         bullets: null,
         harmlessBullets: null,
         asteroids: null,
+        newAsteroidInterval: null,
         ship: null,
         enemyShips: null,
         enemyShipImage: null,
@@ -164,85 +165,85 @@
         context: null
       }
     },
-    sockets: {
-      feed: function (data) {
-      	this.enemyShipLocations = data.players;
-		//this.enemyPlayers[data.playerId].remove();
-		//delete this.enemyPlayers[data.playerId];
-        this.playerId = data.playerId
-      	delete this.enemyShipLocations[data.playerId];
-      	this.numEnemies = Object.keys(this.enemyShipLocations).length
-      },
-      bullet: function (data) {
-      	if (!(data.playerId == this.playerId)) {
-          console.log(`${data.playerId} fired, this player is ${this.playerId}`)
-          var bullet = this.sketch.createSprite(data.x, data.y);
-          bullet.addImage(this.bulletImage);
-          bullet.setSpeed(data.speed, data.r);
-          bullet.rotation = data.r
-          bullet.life = 10;
-          this.harmlessBullets.add(bullet);
-        }
-      },
-      explosion: function (data) {
-        for(var i=0; i<10; i++) {
-            var p = this.sketch.createSprite(data.x, data.y);
-            p.addImage(this.explosionImage);
-            p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
-            p.friction = 0.55;
-            p.life = 15;
-        }
-      },
-      dead: function (data) {
-        if (data.playerId == this.playerId) {
-          this.ship.remove()
-          for(var i=0; i<10; i++) {
-            var p = this.sketch.createSprite(this.ship.position.x, this.ship.position.y);
-            p.addImage(this.explosionImage);
-            p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
-            p.friction = 0.55;
-            p.life = 15;
-          }
-          this.gameOver = true
-        }
-		this.enemyPlayers[data.playerId].remove()
-		delete this.enemyShipLocations[data.playerId]
-      	delete this.enemyPlayers[data.playerId];
-        this.killed.push(data.playerId)
-      }
-    },
+  //   sockets: {
+  //     feed: function (data) {
+  //     	this.enemyShipLocations = data.players;
+		// //this.enemyPlayers[data.playerId].remove();
+		// //delete this.enemyPlayers[data.playerId];
+  //       this.playerId = data.playerId
+  //     	delete this.enemyShipLocations[data.playerId];
+  //     	this.numEnemies = Object.keys(this.enemyShipLocations).length
+  //     },
+  //     bullet: function (data) {
+  //     	if (!(data.playerId == this.playerId)) {
+  //         console.log(`${data.playerId} fired, this player is ${this.playerId}`)
+  //         var bullet = this.sketch.createSprite(data.x, data.y);
+  //         bullet.addImage(this.bulletImage);
+  //         bullet.setSpeed(data.speed, data.r);
+  //         bullet.rotation = data.r
+  //         bullet.life = 10;
+  //         this.harmlessBullets.add(bullet);
+  //       }
+  //     },
+  //     explosion: function (data) {
+  //       for(var i=0; i<10; i++) {
+  //           var p = this.sketch.createSprite(data.x, data.y);
+  //           p.addImage(this.explosionImage);
+  //           p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
+  //           p.friction = 0.55;
+  //           p.life = 15;
+  //       }
+  //     },
+  //     dead: function (data) {
+  //       if (data.playerId == this.playerId) {
+  //         this.ship.remove()
+  //         for(var i=0; i<10; i++) {
+  //           var p = this.sketch.createSprite(this.ship.position.x, this.ship.position.y);
+  //           p.addImage(this.explosionImage);
+  //           p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
+  //           p.friction = 0.55;
+  //           p.life = 15;
+  //         }
+  //         this.gameOver = true
+  //       }
+		// this.enemyPlayers[data.playerId].remove()
+		// delete this.enemyShipLocations[data.playerId]
+  //     	delete this.enemyPlayers[data.playerId];
+  //       this.killed.push(data.playerId)
+  //     }
+  //   },
     methods: {
       highlighter(code) {
         return highlight(code, languages.js); // languages.<insert language> to return html with markup
       },
-      push: function () {
-          this.$socket.emit('push', {
-            x: this.ship.position.x,
-            y: this.ship.position.y,
-            r: this.ship.rotation
-          })
-      },
-      kill: function (playerId) {
-      	this.$socket.emit('kill', {
-      		playerId: playerId
-        })
-      },
-      hit: function (playerId, x, y) {
-        this.$socket.emit('hit', {
-          playerId: playerId,
-          x: x,
-          y: y
-        })
-      },
-      fire: function (playerId, x, y, r, speed) {
-      	this.$socket.emit('fire', {
-          playerId: playerId,
-          x: x,
-          y: y,
-          r: r,
-          speed: speed
-        })
-      },
+      // push: function () {
+      //     this.$socket.emit('push', {
+      //       x: this.ship.position.x,
+      //       y: this.ship.position.y,
+      //       r: this.ship.rotation
+      //     })
+      // },
+      // kill: function (playerId) {
+      // 	this.$socket.emit('kill', {
+      // 		playerId: playerId
+      //   })
+      // },
+      // hit: function (playerId, x, y) {
+      //   this.$socket.emit('hit', {
+      //     playerId: playerId,
+      //     x: x,
+      //     y: y
+      //   })
+      // },
+      // fire: function (playerId, x, y, r, speed) {
+      // 	this.$socket.emit('fire', {
+      //     playerId: playerId,
+      //     x: x,
+      //     y: y,
+      //     r: r,
+      //     speed: speed
+      //   })
+      // },
       createEnemyPlayer: function (id, x, y, r) {
         var enemyShip;
         enemyShip = this.sketch.createSprite(x, y);
@@ -264,7 +265,7 @@
         var img  = this.sketch.loadImage("/public/asteroid"+type+"_small.png");
         // var img  = this.sketch.loadImage("/public/asteroid.jpg");
         a.addImage(img);
-        a.setSpeed(5+(size/5), this.sketch.random(360));
+        a.setSpeed(5+(size/5) + (this.matchTime/3000), this.sketch.random(360));
         a.type = size; // ahhhhhhh
         if(size == 2)
             a.scale = 2;
@@ -274,7 +275,8 @@
           a.scale=1
 
         a.mass = 2+a.scale;
-        this.asteroids.add(a);
+        if (this.asteroids)
+          this.asteroids.add(a);
         return a;
       },
       asteroidHit: function(asteroid, bullet) {
@@ -309,6 +311,9 @@
         //   this.killed.push(enemyShip.id)
         // }
       }
+    },
+    beforeDestroy () {
+      clearInterval(this.newAsteroidInterval)
     },
     created: function () {
       this.timeStart = new Date().getTime();
@@ -476,11 +481,13 @@
               }
             }
 
-            this.push();
+            //this.push();
             sketch.drawSprites()
           }
         }.bind(this);
       }.bind(this);
+      const that = this
+      //this.newAsteroidInterval = setInterval(function () {that.createAsteroid(that.sketch.random(3),that.sketch.random(that.width),that.sketch.random(that.height)), 60000})
       new p5(s, 'p5-section');
     }
   }
@@ -507,9 +514,4 @@
     line-height: 1.5;
     padding: 5px;
   }
-
-  /* optional class for removing the outline */
-  /* .prism-editor__textarea:focus {
-    outline: none;
-  } */
 </style>
