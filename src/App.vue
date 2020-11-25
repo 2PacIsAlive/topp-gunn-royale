@@ -262,17 +262,53 @@
         return enemyShip;
       },
       createAsteroid: function (size, x, y) {
+        if (Math.abs(this.ship.x - x) < 1000) x += 1000
+        if (Math.abs(this.ship.y - y) < 1000) y += 1000 
         let type = this.sketch.floor(this.sketch.random(3))
         var a = this.sketch.createSprite(x, y);
-        var img  = this.sketch.loadImage(require("./assets/asteroid"+type+"_small.png"));
+        const zeroPad = (num, places) => String(num).padStart(places, '0')
+
+        // var img  = this.sketch.loadImage(require("./assets/asteroid"+type+"_small.png"));
         // var img  = this.sketch.loadImage("/public/asteroid.jpg");
-        a.addImage(img);
+        a.addImage(this.asteroid1Image);
+        a.addAnimation("spin",
+          this.asteroid1Image,
+          this.asteroid2Image,
+          this.asteroid3Image,
+          this.asteroid4Image,
+          this.asteroid5Image,
+          this.asteroid6Image,
+          this.asteroid7Image,
+          this.asteroid8Image,
+          this.asteroid9Image,
+          this.asteroid10Image,
+          this.asteroid11Image,
+          this.asteroid12Image,
+          this.asteroid13Image,
+          this.asteroid14Image,
+          this.asteroid15Image,
+          this.asteroid16Image,
+          this.asteroid17Image,
+          this.asteroid18Image,
+          this.asteroid19Image,
+          this.asteroid20Image,
+          this.asteroid21Image,
+          this.asteroid22Image,
+          this.asteroid23Image,
+          this.asteroid24Image,
+          this.asteroid25Image,
+          this.asteroid26Image,
+          this.asteroid27Image,
+          this.asteroid28Image,
+          this.asteroid29Image,
+        );
+        a.changeAnimation("spin")
         a.setSpeed(5+(size/5) + (this.matchTime/3000), this.sketch.random(360));
         a.type = size; // ahhhhhhh
         if(size == 2)
-            a.scale = 2;
-        else if(size == 1)
             a.scale = 1.5;
+        else if(size == 1)
+            a.scale = 1.25;
         else
           a.scale=1
 
@@ -335,6 +371,8 @@
       let maybeLocalStorageCode = localStorage.getItem('code')
       if (maybeLocalStorageCode !== null) this.code = maybeLocalStorageCode
       else this.code = this.originalCode
+      let maybeHighScore = localStorage.getItem('highscore') 
+      if (maybeHighScore !== null) this.highscore = maybeHighScore
       this.timeStart = new Date().getTime();
       var s = function (sketch) {
         this.sketch = sketch;
@@ -355,20 +393,41 @@
           this.playerShipMoving1Image = sketch.loadImage(require("./assets/player_jet_moving_1.png"));
           this.playerShipMoving2Image = sketch.loadImage(require("./assets/player_jet_moving_2.png"));
           this.explosionImage = sketch.loadImage(require("./assets/explosion.png"));
+          this.asteroid1Image = sketch.loadImage(require("./assets/asteroids/tile001.png"));
+          this.asteroid2Image = sketch.loadImage(require("./assets/asteroids/tile002.png"));
+          this.asteroid3Image = sketch.loadImage(require("./assets/asteroids/tile003.png"));
+          this.asteroid4Image = sketch.loadImage(require("./assets/asteroids/tile004.png"));
+          this.asteroid5Image = sketch.loadImage(require("./assets/asteroids/tile005.png"));
+          this.asteroid6Image = sketch.loadImage(require("./assets/asteroids/tile006.png"));
+          this.asteroid7Image = sketch.loadImage(require("./assets/asteroids/tile007.png"));
+          this.asteroid8Image = sketch.loadImage(require("./assets/asteroids/tile008.png"));
+          this.asteroid9Image = sketch.loadImage(require("./assets/asteroids/tile009.png"));
+          this.asteroid10Image = sketch.loadImage(require("./assets/asteroids/tile010.png"));
+          this.asteroid11Image = sketch.loadImage(require("./assets/asteroids/tile011.png"));
+          this.asteroid12Image = sketch.loadImage(require("./assets/asteroids/tile012.png"));
+          this.asteroid13Image = sketch.loadImage(require("./assets/asteroids/tile013.png"));
+          this.asteroid14Image = sketch.loadImage(require("./assets/asteroids/tile014.png"));
+          this.asteroid15Image = sketch.loadImage(require("./assets/asteroids/tile015.png"));
+          this.asteroid16Image = sketch.loadImage(require("./assets/asteroids/tile016.png"));
+          this.asteroid17Image = sketch.loadImage(require("./assets/asteroids/tile017.png"));
+          this.asteroid18Image = sketch.loadImage(require("./assets/asteroids/tile018.png"));
+          this.asteroid19Image = sketch.loadImage(require("./assets/asteroids/tile019.png"));
+          this.asteroid20Image = sketch.loadImage(require("./assets/asteroids/tile020.png"));
+          this.asteroid21Image = sketch.loadImage(require("./assets/asteroids/tile021.png"));
+          this.asteroid22Image = sketch.loadImage(require("./assets/asteroids/tile022.png"));
+          this.asteroid23Image = sketch.loadImage(require("./assets/asteroids/tile023.png"));
+          this.asteroid24Image = sketch.loadImage(require("./assets/asteroids/tile024.png"));
+          this.asteroid25Image = sketch.loadImage(require("./assets/asteroids/tile025.png"));
+          this.asteroid26Image = sketch.loadImage(require("./assets/asteroids/tile026.png"));
+          this.asteroid27Image = sketch.loadImage(require("./assets/asteroids/tile027.png"));
+          this.asteroid28Image = sketch.loadImage(require("./assets/asteroids/tile028.png"));
+          this.asteroid29Image = sketch.loadImage(require("./assets/asteroids/tile029.png"));
           // this.skyImage = sketch.loadImage("/public/sky.png");
 
           this.asteroids = new sketch.Group();
           this.bullets = new sketch.Group();
           this.harmlessBullets = new sketch.Group();
           this.enemyShips = new sketch.Group();
-
-          for(var i = 0; i<this.numAsteroids; i++) {
-              var ang = sketch.random(360);
-              var px = sketch.random(this.width);
-              // var py = this.height/2+ 1000 * sketch.sin(sketch.radians(ang));
-              var py = sketch.random(this.height)
-              this.createAsteroid(sketch.floor(sketch.random(3)), px, py);
-          }
 
           this.ship = sketch.createSprite(this.width/2, this.height/2);
           this.ship.maxSpeed = 6;
@@ -377,6 +436,14 @@
 
           this.ship.addImage("normal", this.playerShipImage);
           this.ship.addAnimation("thrust", this.playerShipMoving1Image, this.playerShipMoving2Image);
+
+          for(var i = 0; i<this.numAsteroids; i++) {
+              var ang = sketch.random(360);
+              var px = sketch.random(this.width);
+              // var py = this.height/2+ 1000 * sketch.sin(sketch.radians(ang));
+              var py = sketch.random(this.height)
+              this.createAsteroid(sketch.floor(sketch.random(3)), px, py);
+          }
 
           let that = this
           const restartGameButton = this.sketch.createButton('restart game')
@@ -449,7 +516,10 @@
               this.timeStart = new Date().getTime()
           } catch (err) {
             this.lastGameScore = this.matchTime
-            if (this.lastGameScore > this.highscore) this.highscore = this.lastGameScore
+            if (this.lastGameScore > this.highscore) {
+              this.highscore = this.lastGameScore
+              localStorage.setItem('highscore', this.highscore)
+            }
             this.error = err
             this.hasError = true
             this.timeStart = null
