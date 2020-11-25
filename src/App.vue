@@ -124,6 +124,8 @@
         showCode: true,
         originalCode: `/*
   use the methods and properties of "ship" object to destroy the asteroids and survive in space
+    ship.x // ship location on x axis
+    ship.y // ship location on y axis
     ship.radar() // returns array containing location of all visible asteroids (e.g. [{x:94.5464,y:45.9036,size:2}...])
     ship.rotate(angleDeg) // rotates ship to specified angle in degrees     
     ship.engageThrusters() // activates ship propulsion
