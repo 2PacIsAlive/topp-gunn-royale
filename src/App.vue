@@ -441,9 +441,9 @@
               }
             }
           };
-          this.context = vm.createContext(sandbox)
+          // this.context = vm.createContext(sandbox)
           try {
-            vm.runInContext(this.code, this.context);
+            vm.runInNewContext(this.code, sandbox);
             this.hasError = false
             if (this.timeStart === null) 
               this.timeStart = new Date().getTime()
