@@ -121,23 +121,12 @@
         width: 0,
         height: 0,
         showCode: true,
-        code: `const nearestAsteroid = radar()
-  .map(asteroid => {
-    let diffX = ship.x - asteroid.x
-    let diffY = ship.y - asteroid.y
-    return {
-      distance: diffX*diffX+diffY*diffY,
-      x: asteroid.x,
-      y: asteroid.y
-    }
-  })
-  .reduce((prev, curr) => 
-    prev.distance < curr.distance ? prev : curr
-  );
-  const angleDeg = Math.atan2(nearestAsteroid.y - ship.y, nearestAsteroid.x - ship.x) * 180 / Math.PI;
-  rotate(angleDeg)
-  engageThrusters()
-  if (nearestAsteroid.distance < 10000) fireMissile()`,
+        code: `/* use the methods and properties of "ship" object to destroy the asteroids and survive in space
+ship.radar() // returns array containing location of all visible asteroids (e.g. [{x:0,y:0}...])
+ship.rotate(angleDeg) // rotates ship to specified angle in degrees     
+ship.engageThrusters() // activates ship propulsion
+ship.disengageThrusters() // disactivates ship propulsion
+ship.fireMissile() // fires a missile`,
         sketch: null,
         bullets: null,
         harmlessBullets: null,
