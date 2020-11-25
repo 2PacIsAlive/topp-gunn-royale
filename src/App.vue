@@ -1,5 +1,5 @@
 <template>
-  <div id="outer">
+  <div v-if="render" id="outer">
     <div id="p5-section">
       
     </div>
@@ -116,17 +116,21 @@
     },
     data () {
       return {
+        render: true,
         highscore: 0,
         error: null,
         width: 0,
         height: 0,
         showCode: true,
-        code: `/* use the methods and properties of "ship" object to destroy the asteroids and survive in space
-ship.radar() // returns array containing location of all visible asteroids (e.g. [{x:0,y:0}...])
-ship.rotate(angleDeg) // rotates ship to specified angle in degrees     
-ship.engageThrusters() // activates ship propulsion
-ship.disengageThrusters() // disactivates ship propulsion
-ship.fireMissile() // fires a missile`,
+        originalCode: `/*
+  use the methods and properties of "ship" object to destroy the asteroids and survive in space
+    ship.radar() // returns array containing location of all visible asteroids (e.g. [{x:94.5464,y:45.9036,size:2}...])
+    ship.rotate(angleDeg) // rotates ship to specified angle in degrees     
+    ship.engageThrusters() // activates ship propulsion
+    ship.disengageThrusters() // disactivates ship propulsion
+    ship.fireMissile() // fires a missile
+*/`,
+        code: null,
         sketch: null,
         bullets: null,
         harmlessBullets: null,
@@ -155,6 +159,11 @@ ship.fireMissile() // fires a missile`,
         //vm: new NodeVM(),
         context: null
       }
+    },
+    watch: {
+      // code: function () {
+      //   localStorage.setItem('code', this.code)
+      // }
     },
   //   sockets: {
   //     feed: function (data) {
@@ -270,6 +279,19 @@ ship.fireMissile() // fires a missile`,
           this.asteroids.add(a);
         return a;
       },
+      shipHit: function(ship, asteroid) {
+        for(var i=0; i<10; i++) {
+          var p = this.sketch.createSprite(ship.position.x, ship.position.y);
+          p.addImage(this.explosionImage);
+          p.setSpeed(this.sketch.random(3,5), this.sketch.random(360));
+          p.friction = 0.55;
+          p.life = 15;
+        }
+
+        this.lastGameScore = this.matchTime
+        if (this.lastGameScore > this.highscore) this.highscore = this.lastGameScore
+        this.gameOver = true
+      },
       asteroidHit: function(asteroid, bullet) {
         for(var i=0; i<10; i++) {
           var p = this.sketch.createSprite(asteroid.position.x, asteroid.position.y);
@@ -307,6 +329,10 @@ ship.fireMissile() // fires a missile`,
       clearInterval(this.newAsteroidInterval)
     },
     created: function () {
+      let god = this
+      let maybeLocalStorageCode = localStorage.getItem('code')
+      if (maybeLocalStorageCode !== null) this.code = maybeLocalStorageCode
+      else this.code = this.originalCode
       this.timeStart = new Date().getTime();
       var s = function (sketch) {
         this.sketch = sketch;
@@ -349,6 +375,33 @@ ship.fireMissile() // fires a missile`,
 
           this.ship.addImage("normal", this.playerShipImage);
           this.ship.addAnimation("thrust", this.playerShipMoving1Image, this.playerShipMoving2Image);
+
+          let that = this
+          const restartGameButton = this.sketch.createButton('restart game')
+          restartGameButton.size(this.sketch.width/3,50)
+          restartGameButton.position(0, this.sketch.height - 50)
+          restartGameButton.style('font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace')
+          restartGameButton.style('background-color: #c8c5c7')
+          restartGameButton.mousePressed(function () {
+            window.location.reload() // this is fucking dumb
+          })
+          const resetButton = this.sketch.createButton('reset code')
+          resetButton.size(this.sketch.width/3,50)
+          resetButton.position(this.sketch.width/3, this.sketch.height - 50)
+          resetButton.style('font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace')
+          resetButton.style('background-color: #e1a919')
+          resetButton.mousePressed(function () {
+            that.code = that.originalCode
+            localStorage.setItem('code', that.originalCode)
+          })
+          const saveButton = this.sketch.createButton('save code')
+          saveButton.size(this.sketch.width/3,50)
+          saveButton.position((this.sketch.width/3)*2, this.sketch.height - 50)
+          saveButton.style('font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace')
+          saveButton.style('background-color: #ce5dcd')
+          saveButton.mousePressed(function () {
+            localStorage.setItem('code', that.code)
+          })
         }.bind(this);
 
         sketch.draw = function () {
@@ -356,66 +409,68 @@ ship.fireMissile() // fires a missile`,
           var sandbox = { 
             ship: {
               x: that.ship.position.x,
-              y: that.ship.position.y
-            },
-            engageThrusters: function () {
-              that.ship.setSpeed(5, that.ship.rotation)
-              that.ship.changeAnimation("thrust");
-            },
-            disengageThrusters: function () {
-              that.ship.changeAnimation("normal")
-            },
-            fireMissile: function () {
-              var bullet = sketch.createSprite(that.ship.position.x, that.ship.position.y);
-              bullet.addImage(that.bulletImage);
-              bullet.setSpeed(15, that.ship.rotation);
-              bullet.rotation = that.ship.rotation
-              bullet.life = 10;
-              that.bullets.add(bullet);
-            },
-            rotate: function (degrees) {
-              that.ship.rotation = degrees
-            },
-            radar: function () {
-              return that.asteroids.map(asteroid => {
-                return {
-                  size: asteroid.type + 1,
-                  x: asteroid.position.x,
-                  y: asteroid.position.y
-                }
-              })
+              y: that.ship.position.y,
+              engageThrusters: function () {
+                that.ship.setSpeed(5, that.ship.rotation)
+                that.ship.changeAnimation("thrust");
+              },
+              disengageThrusters: function () {
+                that.ship.changeAnimation("normal")
+              },
+              fireMissile: function () {
+                var bullet = sketch.createSprite(that.ship.position.x, that.ship.position.y);
+                bullet.addImage(that.bulletImage);
+                bullet.setSpeed(15, that.ship.rotation);
+                bullet.rotation = that.ship.rotation
+                bullet.life = 10;
+                that.bullets.add(bullet);
+              },
+              rotate: function (degrees) {
+                that.ship.rotation = degrees
+              },
+              radar: function () {
+                return that.asteroids.map(asteroid => {
+                  return {
+                    size: asteroid.type + 1,
+                    x: asteroid.position.x,
+                    y: asteroid.position.y
+                  }
+                })
+              }
             }
-
           };
           this.context = vm.createContext(sandbox)
           try {
             vm.runInContext(this.code, this.context);
-            this.gameOver = false
+            this.hasError = false
             if (this.timeStart === null) 
               this.timeStart = new Date().getTime()
           } catch (err) {
             this.lastGameScore = this.matchTime
             if (this.lastGameScore > this.highscore) this.highscore = this.lastGameScore
             this.error = err
-            this.gameOver = true
+            this.hasError = true
             this.timeStart = null
           }
           sketch.background(45,45,45);
           sketch.fill(0);
 
-          if (this.gameOver) {
+          if (this.hasError) {
+            sketch.textAlign(sketch.CENTER);
+            sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
+            sketch.fill(255, 0, 0)
+            sketch.textSize(36);
+            sketch.text(`error: ${this.error}`, this.sketch.width/2, this.sketch.height/2 + 100);
+          } else if (this.gameOver) {
             sketch.textAlign(sketch.CENTER);
             sketch.textSize(26);
-            sketch.fill(255,255,255)
+            sketch.fill(200,197,199)
             sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
             sketch.text('game over', this.sketch.width/2, this.sketch.height/2);
             sketch.textSize(20);
             sketch.textFont('Fira code, Fira Mono, Consolas, Menlo, Courier, monospace');
             sketch.text(`survived: ${this.lastGameScore/1000}s`, this.sketch.width/2, this.sketch.height/2 + 30);
             sketch.text(`highscore: ${this.highscore/1000}s`, this.sketch.width/2, this.sketch.height/2 + 50);
-            sketch.fill(255, 0, 0)
-            sketch.textSize(36);
-            sketch.text(`error: ${this.error}`, this.sketch.width/2, this.sketch.height/2 + 100);
           } else {
             sketch.textAlign(sketch.LEFT);
             sketch.textSize(42);
@@ -424,7 +479,7 @@ ship.fireMissile() // fires a missile`,
             if (!this.gameOver) {
               this.matchTime = this.sketch.floor(new Date().getTime() - this.timeStart)
             }
-            sketch.fill('white')
+            sketch.fill(200,197,199)
             sketch.text(`${this.matchTime / 1000}s`, 20, 50);
 
             for (var i = 0; i < sketch.allSprites.length; i++) {
@@ -436,7 +491,7 @@ ship.fireMissile() // fires a missile`,
             }
 
             this.asteroids.overlap(this.bullets, this.asteroidHit);
-
+            this.ship.overlap(this.asteroids, this.shipHit);
             this.ship.bounce(this.enemyShips);
             this.asteroids.bounce(this.asteroids)
 
