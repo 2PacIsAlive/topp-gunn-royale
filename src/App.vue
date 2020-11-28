@@ -126,6 +126,7 @@
   use the methods and properties of "ship" object to destroy the asteroids and survive in space
     ship.x // ship location on x axis
     ship.y // ship location on y axis
+    ship.rotation // ship direction in degrees
     ship.radar() // returns array containing location of all visible asteroids (e.g. [{x:94.5464,y:45.9036,size:2}...])
     ship.rotate(angleDeg) // rotates ship to specified angle in degrees     
     ship.engageThrusters() // activates ship propulsion
@@ -479,6 +480,7 @@
             ship: {
               x: that.ship.position.x,
               y: that.ship.position.y,
+              rotation: that.ship.rotation,
               engageThrusters: function () {
                 that.ship.setSpeed(5, that.ship.rotation)
                 that.ship.changeAnimation("thrust");
