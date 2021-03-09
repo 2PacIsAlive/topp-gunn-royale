@@ -1,6 +1,6 @@
 # topp-gunn-royale
 
-> chicken dinners in space
+> blast asteroids with code
 
 ## Build Setup
 
