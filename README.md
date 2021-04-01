@@ -7,7 +7,7 @@
 ``` javascript
 const radar = ship.radar()
 if (radar.length > 0) {
-  const nearestAsteroid = ship.radar()
+  const nearestAsteroid = radar
     .map(asteroid => {
       let diffX = ship.x - asteroid.x
       let diffY = ship.y - asteroid.y
