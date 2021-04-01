@@ -9,8 +9,8 @@ const radar = ship.radar()
 if (radar.length > 0) {
   const nearestAsteroid = radar
     .map(asteroid => {
-      let diffX = ship.x - asteroid.x
-      let diffY = ship.y - asteroid.y
+      const diffX = ship.x - asteroid.x
+      const diffY = ship.y - asteroid.y
       return {
         distance: diffX*diffX+diffY*diffY,
         x: asteroid.x,
